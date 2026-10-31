@@ -1,0 +1,39 @@
+# Тесты locqa + проверка ARB на каждый pull request.
+# В репозитории хакатона данных нет (.gitignore), поэтому проверка ARB
+# запускается только если файлы есть по пути из переменных ниже.
+name: locqa
+on:
+  pull_request:
+    paths: ["**/*.arb", "locqa.py", "tests/**", "glossary.csv"]
+  push:
+    branches: [main]
+env:
+  SOURCE_ARB: l10n/intl_ru.arb
+  KK_ARB: l10n/intl_kk.arb
+  UZ_ARB: l10n/intl_uz.arb
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Тесты
+        run: pip install pytest && python -m pytest -q tests
+      - name: Демо на синтетическом примере
+        run: python locqa.py --no-color check --source examples/intl_ru.arb --target examples/intl_kk.arb --glossary glossary.csv --out report_example.json
+      - name: Проверка ARB (если файлы есть)
+        run: |
+          if [ ! -f "$SOURCE_ARB" ]; then echo "ARB-файлов нет — пропускаю"; exit 0; fi
+          python locqa.py validate "$KK_ARB" "$UZ_ARB" --template "$SOURCE_ARB"
+          python locqa.py check --source "$SOURCE_ARB" --target "$KK_ARB" \
+            --glossary glossary.csv --out report_kk.json --fail-on high
+          python locqa.py check --source "$SOURCE_ARB" --target "$UZ_ARB" --out report_uz.json
+      - name: Сохранить отчёты
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: locqa-reports
+          path: report_*.*
+          if-no-files-found: ignore

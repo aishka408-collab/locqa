@@ -1,0 +1,22 @@
+{
+  "@@locale": "ru",
+  "@@comment": "Синтетический пример для демонстрации locqa (не данные игры)",
+  "garage_rent_button": "Арендовать",
+  "welcome_title": "Добро пожаловать, {name}!",
+  "send_gift": "Отправить подарок {name}",
+  "coins_count": "{count, plural, one{{count} монета} few{{count} монеты} other{{count} монет}}",
+  "cancel": "Отмена",
+  "family_title": "Семья",
+  "faction_title": "Фракция",
+  "shop_title": "Магазин",
+  "settings_title": "Настройки игры",
+  "brand": "Grand Mobile",
+  "auth_error": "Ошибка авторизации",
+  "access": "Доступно",
+  "reward_title": "Награда получена",
+  "case_open": "Кейс доступен",
+  "bonus_open": "Бонус доступен",
+  "map_open": "Карта доступна",
+  "vip_desc": "VIP — это премиум-статус",
+  "exit_button": "Выход"
+}

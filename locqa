@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""Запускатель locqa.
+
+С аргументами работает как обычная команда:  ./locqa check --source ... --target ...
+Без аргументов (например, двойной клик в Finder) показывает простое меню.
+"""
+import os
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)
+from locqa import main  # noqa: E402
+
+MENU = [
+    ("Проверить казахский перевод", ["check", "--source", "data/intl_ru.arb", "--target", "data/intl_kk.arb",
+                                     "--glossary", "glossary.csv", "--include", "reports/llm_findings_kk.json",
+                                     "--out", "reports/report_kk.json"], "reports/report_kk.html"),
+    ("Проверить узбекский перевод", ["check", "--source", "data/intl_ru.arb", "--target", "data/intl_uz.arb",
+                                     "--glossary", "glossary.csv", "--out", "reports/report_uz.json"],
+     "reports/report_uz.html"),
+    ("Открыть страницу проверки для носителя (казахский)", None, "reports/proverka_kk.html"),
+    ("Открыть страницу проверки для носителя (узбекский)", None, "reports/proverka_uz.html"),
+    ("Собрать intl_kk_fixed.arb из проверенной таблицы", ["apply", "--target", "data/intl_kk.arb",
+                                                          "--review", "reports/review_kk.csv",
+                                                          "--out", "intl_kk_fixed.arb",
+                                                          "--report", "reports/report_kk.json"], None),
+    ("Проверить intl_kk_fixed.arb для Flutter", ["validate", "intl_kk_fixed.arb",
+                                                 "--template", "data/intl_ru.arb"], None),
+    ("Перевести intl_kk_fixed.arb в латиницу (алфавит 2021)", ["translit", "--source", "data/intl_ru.arb",
+                                                             "--target", "intl_kk_fixed.arb",
+                                                             "--out", "reports/intl_kk_latn.arb"], None),
+]
+
+
+def open_file(path):
+    if not os.path.exists(path):
+        print(f"\n  Файл {path} не найден.")
+        return
+    opener = "open" if sys.platform == "darwin" else "xdg-open"
+    try:
+        subprocess.run([opener, path], check=False)
+    except FileNotFoundError:
+        print(f"\n  Откройте вручную: {os.path.abspath(path)}")
+
+
+def menu():
+    os.chdir(HERE)
+    while True:
+        print("\n  \033[1m\033[36mlocqa\033[0m — что сделать?\n")
+        for i, (title, _, _) in enumerate(MENU, 1):
+            print(f"   {i}. {title}")
+        print("   0. Выход\n")
+        try:
+            choice = input("  Введите номер и нажмите Enter: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+        if choice in ("0", "", "q"):
+            return 0
+        if not choice.isdigit() or not 1 <= int(choice) <= len(MENU):
+            print("  Нужен номер из списка.")
+            continue
+        title, args, to_open = MENU[int(choice) - 1]
+        if args:
+            main(args)
+        if to_open:
+            if args:
+                try:
+                    if input("  Открыть отчёт в браузере? [Enter — да, n — нет] ").strip().lower() == "n":
+                        continue
+                except (EOFError, KeyboardInterrupt):
+                    return 0
+            open_file(to_open)
+
+
+if __name__ == "__main__":
+    sys.exit(menu() if len(sys.argv) == 1 else main())

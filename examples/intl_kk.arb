@@ -1,0 +1,22 @@
+{
+  "@@locale": "kk",
+  "@@comment": "Синтетический пример: в каждой строке — одна типичная ошибка",
+  "garage_rent_button": "Жалға алу үшін басыңыз",
+  "welcome_title": "Қош келдің, {nam}!",
+  "send_gift": "{name}-ға сыйлық жіберу",
+  "coins_count": "{count, plural, one{{count} монета}}",
+  "cancel": "Бастау",
+  "family_title": "Жанұя",
+  "faction_title": "Фракция",
+  "shop_title": "Дүкен",
+  "settings_title": "Настройки игры",
+  "brand": "Grand Mobile",
+  "auth_error": "Avtorizatsiya xatosi",
+  "access": "Колжетімді",
+  "reward_title": "Сыйлық алынды",
+  "case_open": "Кейс қолжетімді",
+  "bonus_open": "Бонус қолжетімді",
+  "map_open": "Карта қолжетімді",
+  "vip_desc": "VIP премиум мәртебе болып табылады",
+  "shop_title": "Сауда орны"
+}

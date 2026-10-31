@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Данные игры — по правилам хакатона не публикуем (и всё, что из них получено)
+data/
+reports/
+*.arb
+review*.csv
+
+# Веб-интерфейс: локальное состояние, загрузки и API-ключи — никогда не коммитить
+web/qazaq_loc_qa/backend/state/
+web/qazaq_loc_qa/backend/uploads/
+**/ai_secrets.json
+!web/qazaq_loc_qa/backend/tests/data/sample.arb
+
+# Служебное
+locqa_old.py
+kk_errors.csv
+report.csv
+
+# синтетический пример — не данные игры, его можно публиковать
+!examples/*.arb
+report_example.*
+
+# презентация с примерами строк из игры — только для жюри
+docs/presentation.pdf
+
+# архив для организаторов (содержит данные игры)
+submission/

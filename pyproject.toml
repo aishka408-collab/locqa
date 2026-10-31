@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "locqa"
+version = "0.1.0"
+description = "Контроль качества ARB-локализаций Flutter"
+requires-python = ">=3.9"
+
+[project.optional-dependencies]
+llm = ["anthropic"]
+test = ["pytest"]
+
+[project.scripts]
+locqa = "locqa:main"
+
+[tool.setuptools]
+py-modules = ["locqa"]

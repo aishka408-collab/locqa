@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qazaq Loc QA — Система проверки локализации</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --badge-bg: #e0f2fe;
+            --badge-text: #0369a1;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 24px; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+        h1 { font-size: 24px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card h2 { font-size: 18px; margin-bottom: 16px; color: #334155; }
+        
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-card { background: white; border: 1px solid var(--border); padding: 16px; border-radius: 10px; text-align: center; }
+        .stat-val { font-size: 28px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+        .stat-label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; transition: 0.15s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-secondary { background: #e2e8f0; color: #334155; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+        .flex-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .upload-zone { border: 2px dashed var(--border); padding: 30px; text-align: center; border-radius: 10px; cursor: pointer; background: #fafafa; }
+        .upload-zone:hover { border-color: var(--primary); background: #f0f9ff; }
+
+        select, input[type="text"] { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); font-size: 14px; outline: none; }
+        select:focus, input[type="text"]:focus { border-color: var(--primary); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        th { background: #f1f5f9; font-weight: 600; color: #475569; position: sticky; top: 0; }
+        tr:hover { background: #f8fafc; }
+        
+        .badge { padding: 4px 8px; border-radius: 9999px; font-size: 12px; font-weight: 600; background: var(--badge-bg); color: var(--badge-text); display: inline-block; }
+        .badge-high { background: #dcfce7; color: #15803d; }
+        .badge-medium { background: #fef3c7; color: #b45309; }
+        .badge-low { background: #fee2e2; color: #b91c1c; }
+
+        .actions-cell { display: flex; gap: 6px; }
+        .table-container { max-height: 600px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: white; border-radius: 12px; padding: 24px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-close { cursor: pointer; font-size: 20px; font-weight: bold; border: none; background: none; }
+        .detail-row { margin-bottom: 12px; }
+        .detail-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .detail-val { font-size: 15px; margin-top: 4px; padding: 8px; background: #f8fafc; border-radius: 6px; word-break: break-all; }
+        .diff-added { background: #dcfce7; color: #166534; padding: 2px 4px; border-radius: 4px; }
+        .diff-removed { background: #fee2e2; color: #991b1b; padding: 2px 4px; border-radius: 4px; text-decoration: line-through; }
+
+        /* Dashboard / modern polish */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 12px 0; }
+        .dash-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+        .dash-val { font-size: 22px; font-weight: 700; color: var(--primary); }
+        .dash-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+        .toast { position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #fff; padding: 12px 18px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 2000; display: none; font-size: 14px; }
+        .toast.show { display: block; }
+        .toast.success { background: #16a34a; }
+        .toast.error { background: #dc2626; }
+        th.sortable { cursor: pointer; user-select: none; }
+        th.sortable:hover { background: #e2e8f0; }
+        .sort-ind { font-size: 10px; margin-left: 4px; color: var(--text-muted); }
+        .history-list { max-height: 200px; overflow-y: auto; font-size: 13px; }
+        .history-item { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+        .pill { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; background: #e2e8f0; color: #334155; margin: 2px; }
+        .preview-box { background: #f1f5f9; border: 1px dashed var(--border); border-radius: 6px; padding: 8px; font-size: 13px; margin-top: 6px; word-break: break-all; }
+        .modal-wide { max-width: 720px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div>
+            <h1><span>🇰🇿</span> Qazaq Loc QA System</h1>
+            <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Система автоматического анализа и исправления локализации</p>
+        </div>
+        <div class="flex-row">
+            <span id="server-status" class="badge badge-high">Сервер активен</span>
+        </div>
+    </header>
+
+    <div class="grid-stats">
+        <div class="stat-card">
+            <div class="stat-label">Всего ключей</div>
+            <div class="stat-val" id="stat-total-keys">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Найдено ошибок</div>
+            <div class="stat-val" id="stat-total-errors" style="color: var(--danger);">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Принято правок</div>
+            <div class="stat-val" id="stat-accepted" style="color: var(--success);">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Отклонено правок</div>
+            <div class="stat-val" id="stat-rejected" style="color: var(--warning);">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Pending</div>
+            <div class="stat-val" id="stat-pending" style="color: var(--primary);">0</div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('analysis')">🔍 Анализ локализации</button>
+        <button class="tab-btn" onclick="switchTab('glossary')">📖 Словарь (Глоссарий)</button>
+        <button class="tab-btn" onclick="switchTab('exports')">📊 Отчёты и экспорт</button>
+        <button class="tab-btn" onclick="switchTab('aiproviders')">AI Providers</button>
+        <button class="tab-btn" onclick="switchTab('aireview')">AI Review</button>
+        <button class="tab-btn" onclick="switchTab('aiusage')">AI Usage</button>
+    </div>
+
+    <!-- TAB 1: ANALYSIS -->
+    <div id="tab-analysis" class="tab-content active">
+        <div class="card">
+            <h2>1. Загрузка ARB-файлов</h2>
+            <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" multiple accept=".arb,.json" style="display:none" onchange="handleFileUpload(event)">
+                <p style="font-weight: 600; font-size: 16px;">Нажмите для выбора файлов или перетащите ARB-файлы сюда</p>
+                <p style="color: var(--text-muted); font-size: 13px; margin-top: 6px;">Поддерживаются intl_ru.arb, intl_kk.arb, intl_en.arb и др.</p>
+            </div>
+            
+            <div id="file-selection-area" style="margin-top: 16px; display: none;">
+                <div class="flex-row" style="margin-bottom: 12px;">
+                    <div>
+                        <label class="detail-label">Исходный язык (Source):</label><br>
+                        <select id="source-file-select" style="min-width: 200px;"></select>
+                    </div>
+                    <div>
+                        <label class="detail-label">Целевой язык (Target):</label><br>
+                        <select id="target-file-select" style="min-width: 200px;"></select>
+                    </div>
+                    <div style="margin-top: 18px;">
+                        <button class="btn btn-primary" onclick="runAnalysis()">🚀 Запустить анализ (11 анализаторов)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="analysis-results-card" class="card" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <h2>2. Результаты анализа</h2>
+                <div class="flex-row">
+                    <button class="btn btn-secondary" onclick="acceptAllHighConfidence()">⚡ Принять все с High Confidence</button>
+                    <button class="btn btn-success" onclick="applyFixes()">💾 Применить исправления</button>
+                    <button class="btn btn-danger" onclick="undoFixes()">↩ Undo (Откат)</button>
+                    <button class="btn btn-primary" onclick="downloadFixed()">📥 Скачать исправленный ARB</button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex-row" style="margin-bottom: 16px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+                <div>
+                    <label class="detail-label">Категория ошибки:</label><br>
+                    <select id="category-filter" onchange="renderErrors()">
+                        <option value="">Все категории (11)</option>
+                        <option value="untranslated">untranslated</option>
+                        <option value="same_as_source">same_as_source</option>
+                        <option value="placeholder_mismatch">placeholder_mismatch</option>
+                        <option value="plural_mismatch">plural_mismatch</option>
+                        <option value="glossary_violation">glossary_violation</option>
+                        <option value="length_overflow">length_overflow</option>
+                        <option value="machine_translation_suspect">machine_translation_suspect</option>
+                        <option value="inconsistent_term">inconsistent_term</option>
+                        <option value="suffix_harmony">suffix_harmony</option>
+                        <option value="orthography">orthography</option>
+                        <option value="wrong_language">wrong_language</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="detail-label">Уверенность:</label><br>
+                    <select id="confidence-filter" onchange="renderErrors()">
+                        <option value="">Любая уверенность</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                <div style="flex-grow: 1;">
+                    <label class="detail-label">Поиск по ключу/тексту:</label><br>
+                    <input type="text" id="search-input" placeholder="Поиск..." style="width: 100%;" oninput="renderErrors()">
+                </div>
+            </div>
+
+            <div id="table-summary" style="margin: 10px 0; color: var(--text-muted); font-size: 13px;"></div>
+
+            <div class="card" style="margin-bottom: 12px;">
+                <h2>Dashboard</h2>
+                <div class="dashboard-grid" id="dashboard-grid"></div>
+                <div style="margin-top: 8px;">
+                    <div class="detail-label">Categories</div>
+                    <div id="cat-pills"></div>
+                </div>
+                <div style="margin-top: 8px;">
+                    <div class="detail-label">Confidence</div>
+                    <div id="conf-pills"></div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 12px;">
+                <h2>History / Undo</h2>
+                <div class="history-list" id="history-list"></div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="sortable" style="width: 15%;" onclick="sortBy('key')">Key <span class="sort-ind" id="sort-key"></span></th>
+                            <th class="sortable" style="width: 14%;" onclick="sortBy('category')">Category <span class="sort-ind" id="sort-category"></span></th>
+                            <th class="sortable" style="width: 8%;" onclick="sortBy('confidence')">Confidence <span class="sort-ind" id="sort-confidence"></span></th>
+                            <th style="width: 20%;">Source</th>
+                            <th style="width: 20%;">Current</th>
+                            <th style="width: 15%;">Suggestion</th>
+                            <th style="width: 8%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="errors-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: GLOSSARY -->
+    <div id="tab-glossary" class="tab-content">
+        <div class="card">
+            <h2>Добавить термин в глоссарий</h2>
+            <div class="flex-row" style="margin-top: 12px;">
+                <input type="text" id="new-ru-term" placeholder="Русский термин (например: бонус)">
+                <input type="text" id="new-kk-term" placeholder="Казахский перевод (например: бонус)">
+                <input type="text" id="new-variants" placeholder="Варианты через запятую (например: бонус, бонустар)">
+                <button class="btn btn-primary" onclick="addGlossaryTerm()">➕ Добавить термин</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Термины глоссария</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Термин источника (RU)</th>
+                            <th>Перевод (KK)</th>
+                            <th>Допустимые варианты</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="glossary-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: EXPORTS -->
+    <div id="tab-exports" class="tab-content">
+        <div class="card">
+            <h2>Экспорт результатов</h2>
+            <p style="color: var(--text-muted); margin-bottom: 16px;">Скачайте подробные аналитические отчёты по результатам локализационного аудита.</p>
+            <div class="flex-row">
+                <button class="btn btn-secondary" onclick="exportReport('markdown')">📄 Экспорт в Markdown (.md)</button>
+                <button class="btn btn-secondary" onclick="exportReport('csv')">📊 Экспорт в CSV (.csv)</button>
+                <button class="btn btn-secondary" onclick="exportReport('json')">📦 Экспорт в JSON</button>
+                <button class="btn btn-secondary" onclick="exportReport('excel')">📊 Excel (.xlsx)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: AI PROVIDERS -->
+    <div id="tab-aiproviders" class="tab-content">
+        <div class="card">
+            <h2>AI Providers</h2>
+            <div class="flex-row" style="margin-bottom:12px;">
+                <select id="ai-type">
+                    <option value="openai">OpenAI</option>
+                    <option value="openai_compat">OpenAI-compatible (OpenRouter)</option>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="gemini">Google Gemini</option>
+                    <option value="ollama">Ollama (local)</option>
+                </select>
+                <input type="text" id="ai-name" placeholder="Name">
+                <input type="text" id="ai-baseurl" placeholder="Base URL (optional)">
+                <input type="text" id="ai-model" placeholder="Model">
+                <input type="password" id="ai-key" placeholder="API Key">
+                <button class="btn btn-primary" onclick="aiSaveProvider()">Save</button>
+            </div>
+            <div id="ai-providers-list"></div>
+        </div>
+    </div>
+
+    <!-- TAB: AI REVIEW -->
+    <div id="tab-aireview" class="tab-content">
+        <div class="card">
+            <h2>AI Review</h2>
+            <div class="flex-row" style="margin-bottom:12px;">
+                <select id="ai-review-provider"></select>
+                <input type="number" id="ai-max-items" value="20" min="1" max="200" style="width:80px;">
+                <input type="number" id="ai-max-tokens" value="" placeholder="Token budget" style="width:120px;">
+                <button class="btn btn-primary" onclick="aiStartReview()">Start</button>
+                <button class="btn btn-danger" onclick="aiStopReview()">Stop</button>
+            </div>
+            <div id="ai-review-status" style="margin:8px 0;color:var(--text-muted);"></div>
+            <div id="ai-review-errors" role="alert" style="display:none;margin:8px 0;padding:10px;border:1px solid #ef4444;border-radius:6px;background:#fef2f2;color:#991b1b;"></div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Key</th><th>Category</th><th>Confidence</th><th>Suggestion</th><th>Actions</th></tr></thead>
+                    <tbody id="ai-findings-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: AI USAGE -->
+    <div id="tab-aiusage" class="tab-content">
+        <div class="card">
+            <h2>AI Usage</h2>
+            <div id="ai-usage"></div>
+            <button class="btn btn-secondary" onclick="aiLoadUsage()">Refresh</button>
+        </div>
+    </div>
+</div>
+
+<!-- ERROR DETAIL / MANUAL FIX MODAL -->
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h3 id="modal-title">Детали ошибки</h3>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Ключ ARB:</div>
+            <div class="detail-val" id="modal-key"></div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Категория:</div>
+            <div class="detail-val"><span id="modal-category" class="badge"></span></div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Confidence</div>
+            <div class="detail-val" id="modal-confidence"></div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Объяснение анализатора:</div>
+            <div class="detail-val" id="modal-explanation"></div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Исходный текст:</div>
+            <div class="detail-val" id="modal-source"></div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Текущий перевод:</div>
+            <div class="detail-val" id="modal-current"></div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Ручное исправление:</div>
+            <input type="text" id="modal-manual-input" style="width: 100%; margin-top: 6px;" oninput="checkModalPlaceholder()">
+            <p id="modal-ph-warning" style="color: var(--danger); font-size: 12px; margin-top: 4px; display: none;">Внимание: нарушены плейсхолдеры!</p>
+            <div class="preview-box" id="modal-preview"></div>
+        </div>
+        <div class="flex-row" style="justify-content: flex-end; margin-top: 16px;">
+            <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+            <button class="btn btn-success" onclick="saveManualFixFromModal()">Сохранить исправление</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentAnalysisId = null;
+    let uploadedFileIds = [];
+    let allErrors = [];
+    let currentFixes = {};
+    let activeModalError = null;
+    let renderLimit = 1000;
+    let sortState = { col: null, dir: 1 };
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById('tab-' + tabId).classList.add('active');
+        if (tabId === 'glossary') loadGlossary();
+        if (tabId === 'aiproviders') aiLoadProviders();
+        if (tabId === 'aiusage') aiLoadUsage();
+    }
+
+    async function handleFileUpload(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+
+        try {
+            const resp = await fetch('/upload', { method: 'POST', body: formData });
+            if (!resp.ok) throw new Error('Ошибка загрузки файлов: ' + (await resp.text()));
+            const data = await resp.json();
+            uploadedFileIds = data.file_ids;
+            
+            // Populate select dropdowns
+            const sSelect = document.getElementById('source-file-select');
+            const tSelect = document.getElementById('target-file-select');
+            sSelect.innerHTML = '';
+            tSelect.innerHTML = '';
+
+            uploadedFileIds.forEach(fid => {
+                const opt1 = document.createElement('option');
+                opt1.value = fid; opt1.textContent = fid.split('_').slice(1).join('_');
+                if (fid.includes('ru')) opt1.selected = true;
+                sSelect.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = fid; opt2.textContent = fid.split('_').slice(1).join('_');
+                if (fid.includes('kk')) opt2.selected = true;
+                tSelect.appendChild(opt2);
+            });
+
+            document.getElementById('file-selection-area').style.display = 'block';
+            alert('Файлы успешно загружены (' + uploadedFileIds.length + ' шт.)');
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function runAnalysis() {
+        const sFid = document.getElementById('source-file-select').value;
+        const tFid = document.getElementById('target-file-select').value;
+
+        try {
+            const payload = {
+                file_ids: uploadedFileIds,
+                source_file_id: sFid,
+                target_file_id: tFid
+            };
+            const resp = await fetch('/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!resp.ok) throw new Error('Ошибка запуска анализа: ' + (await resp.text()));
+            const data = await resp.json();
+            currentAnalysisId = data.analysis_id;
+            allErrors = data.errors || [];
+            currentFixes = {};
+            renderLimit = 1000;
+
+            document.getElementById('analysis-results-card').style.display = 'block';
+            renderErrors();
+            updateStats();
+            loadHistory();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    function renderErrors() {
+        const catFilter = document.getElementById('category-filter').value;
+        const confFilter = document.getElementById('confidence-filter').value;
+        const search = document.getElementById('search-input').value.toLowerCase();
+
+        const tbody = document.getElementById('errors-tbody');
+        tbody.innerHTML = '';
+
+        const filtered = allErrors.filter(e => {
+            if (catFilter && e.category !== catFilter) return false;
+            if (confFilter && e.confidence !== confFilter) return false;
+            if (search) {
+                const inKey = e.key.toLowerCase().includes(search);
+                const inSrc = (e.source || e.original || '').toLowerCase().includes(search);
+                const inCur = (e.current || '').toLowerCase().includes(search);
+                if (!inKey && !inSrc && !inCur) return false;
+            }
+            return true;
+        });
+
+        // Sorting
+        if (sortState.col) {
+            filtered.sort((a, b) => {
+                const va = (a[sortState.col] || '').toString().toLowerCase();
+                const vb = (b[sortState.col] || '').toString().toLowerCase();
+                if (va < vb) return -1 * sortState.dir;
+                if (va > vb) return 1 * sortState.dir;
+                return 0;
+            });
+        }
+        const visible = filtered.slice(0, renderLimit);
+        if (visible.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = '<td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">No findings for current filters.</td>';
+            tbody.appendChild(tr);
+        }
+        const summary = document.getElementById('table-summary');
+        if (summary) {
+            const shown = visible.length;
+            const total = allErrors.length;
+            let html = `Показано <strong>${shown}</strong> из <strong>${filtered.length}</strong> отфильтрованных ` +
+                       `(всего ошибок в анализе: <strong>${total}</strong>).`;
+            if (shown < filtered.length) {
+                html += ` <button class="btn btn-sm btn-secondary" onclick="showAllErrors()">Показать все</button>`;
+            }
+            summary.innerHTML = html;
+        }
+        visible.forEach(err => {
+            const tr = document.createElement('tr');
+            const confClass = err.confidence === 'high' ? 'badge-high' : (err.confidence === 'low' ? 'badge-low' : 'badge-medium');
+            const fix = currentFixes[err.key];
+            const fixStatusText = fix ? ` [${fix.action.toUpperCase()}]` : '';
+
+            tr.innerHTML = `
+                <td style="font-family: monospace; font-weight: 600;">${escapeHtml(err.key)}</td>
+                <td><span class="badge">${escapeHtml(err.category)}</span></td>
+                <td><span class="badge ${confClass}">${escapeHtml(err.confidence || 'medium')}</span></td>
+                <td>${escapeHtml(err.source || err.original || '')}</td>
+                <td>${escapeHtml(err.current || '')}</td>
+                <td><strong>${escapeHtml(err.suggestion || '(нет варианта)')}</strong><span style="color:var(--primary); font-size:12px;">${escapeHtml(fixStatusText)}</span></td>
+                <td>
+                    <div class="actions-cell">
+                        <button class="btn btn-sm btn-success" title="Принять" onclick="decideFix('${escapeHtmlJs(err.key)}', 'accept', '${escapeHtmlJs(err.suggestion || err.current)}')">✓</button>
+                        <button class="btn btn-sm btn-danger" title="Отклонить" onclick="decideFix('${escapeHtmlJs(err.key)}', 'reject', null)">✕</button>
+                        <button class="btn btn-sm btn-secondary" title="Подробнее/Править" onclick="openModal('${escapeHtmlJs(err.key)}')">✎</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function showAllErrors() {
+        // Explicit user action: render every filtered row without the 1000-row
+        // performance cap.  Statistics above always use the full dataset.
+        renderLimit = Number.MAX_SAFE_INTEGER;
+        renderErrors();
+    }
+
+    function sortBy(col) {
+        if (sortState.col === col) {
+            sortState.dir = sortState.dir * -1;
+        } else {
+            sortState.col = col;
+            sortState.dir = 1;
+        }
+        // update indicators
+        ['key','category','confidence'].forEach(c => {
+            const el = document.getElementById('sort-' + c);
+            if (el) el.textContent = (sortState.col === c) ? (sortState.dir > 0 ? '▲' : '▼') : '';
+        });
+        renderErrors();
+    }
+
+    async function decideFix(key, action, newValue) {
+        if (!currentAnalysisId) return;
+        currentFixes[key] = { action: action, new_value: newValue };
+
+        try {
+            const payload = [{ key: key, action: action, new_value: newValue }];
+            const resp = await fetch(`/analysis/${currentAnalysisId}/fixes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!resp.ok) {
+                const errJson = await resp.json();
+                throw new Error(errJson.detail || 'Ошибка сохранения фикса');
+            }
+            renderErrors();
+            updateStats();
+        } catch (err) {
+            alert('Ошибка: ' + err.message);
+        }
+    }
+
+    function acceptAllHighConfidence() {
+        const highConf = allErrors.filter(e => e.confidence === 'high' && e.suggestion);
+        if (highConf.length === 0) {
+            alert('Нет предложений с высокой уверенностью (High Confidence).');
+            return;
+        }
+        if (!confirm('Accept ' + highConf.length + ' high-confidence suggestions?')) return;
+        highConf.forEach(e => {
+            decideFix(e.key, 'accept', e.suggestion);
+        });
+        alert(`Принято ${highConf.length} предложений с высокой уверенностью.`);
+    }
+
+    async function applyFixes() {
+        if (!currentAnalysisId) return;
+        if (!confirm('Apply recorded fixes to target file?')) return;
+        try {
+            const resp = await fetch(`/analysis/${currentAnalysisId}/apply`, { method: 'POST' });
+            if (!resp.ok) throw new Error('Ошибка применения: ' + (await resp.text()));
+            const data = await resp.json();
+            alert('Исправления успешно применены к целевому файлу!');
+            updateStats();
+            loadHistory();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function undoFixes() {
+        if (!currentAnalysisId) return;
+        if (!confirm('Undo last apply?')) return;
+        try {
+            const resp = await fetch(`/analysis/${currentAnalysisId}/undo`, { method: 'POST' });
+            if (!resp.ok) {
+                const errJson = await resp.json();
+                throw new Error(errJson.detail || 'Ошибка Undo');
+            }
+            const data = await resp.json();
+            alert('Откат выполнен успешно! Файл восстановлен из снимка.');
+            updateStats();
+            loadHistory();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    function downloadFixed() {
+        if (!currentAnalysisId) return;
+        const targetFid = document.getElementById('target-file-select').value;
+        if (!targetFid) return;
+        window.open(`/analysis/${currentAnalysisId}/download/${targetFid}`, '_blank');
+    }
+
+    async function loadHistory() {
+        if (!currentAnalysisId) return;
+        try {
+            const resp = await fetch('/analysis/' + currentAnalysisId + '/report');
+            if (resp.ok) {
+                const data = await resp.json();
+                const list = document.getElementById('history-list');
+                if (!list) return;
+                list.innerHTML = '';
+                (data.history || []).slice().reverse().forEach(h => {
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.textContent = (h.timestamp || '') + ' - ' + (h.description || '');
+                    list.appendChild(div);
+                });
+                if ((data.history || []).length === 0) {
+                    list.textContent = 'No history yet.';
+                }
+            }
+        } catch (e) {}
+    }
+
+    async function updateStats() {
+        if (!currentAnalysisId) return;
+        try {
+            const resp = await fetch(`/analysis/${currentAnalysisId}/stats`);
+            if (resp.ok) {
+                const st = await resp.json();
+                document.getElementById('stat-total-keys').textContent = st.total_keys;
+                document.getElementById('stat-total-errors').textContent = st.error_count;
+                document.getElementById('stat-accepted').textContent = st.accepted_fixes;
+                document.getElementById('stat-rejected').textContent = st.rejected_fixes;
+                document.getElementById('stat-pending').textContent = st.pending_fixes;
+
+                // Dashboard grid
+                const dg = document.getElementById('dashboard-grid');
+                if (dg) {
+                    dg.innerHTML = '';
+                    const cards = [
+                        { label: 'Source', val: st.source_file_id || '-' },
+                        { label: 'Target', val: st.target_file_id || '-' },
+                        { label: 'Total keys', val: st.total_keys },
+                        { label: 'Errors', val: st.error_count },
+                        { label: 'Accepted', val: st.accepted_fixes },
+                        { label: 'Rejected', val: st.rejected_fixes },
+                        { label: 'Pending', val: st.pending_fixes },
+                    ];
+                    cards.forEach(c => {
+                        const d = document.createElement('div');
+                        d.className = 'dash-card';
+                        d.innerHTML = `<div class="dash-val">${escapeHtml(String(c.val))}</div><div class="dash-label">${escapeHtml(c.label)}</div>`;
+                        dg.appendChild(d);
+                    });
+                }
+                // Category pills
+                const cp = document.getElementById('cat-pills');
+                if (cp) {
+                    cp.innerHTML = '';
+                    Object.entries(st.categories || {}).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
+                        const span = document.createElement('span');
+                        span.className = 'pill';
+                        span.textContent = k + ': ' + v;
+                        cp.appendChild(span);
+                    });
+                }
+                // Confidence pills
+                const confp = document.getElementById('conf-pills');
+                if (confp) {
+                    confp.innerHTML = '';
+                    Object.entries(st.confidence || {}).forEach(([k,v]) => {
+                        const span = document.createElement('span');
+                        span.className = 'pill';
+                        span.textContent = k + ': ' + v;
+                        confp.appendChild(span);
+                    });
+                }
+            }
+        } catch (e) {}
+    }
+
+    // Modal
+    function openModal(key) {
+        const err = allErrors.find(e => e.key === key);
+        if (!err) return;
+        activeModalError = err;
+        document.getElementById('modal-key').textContent = err.key;
+        document.getElementById('modal-category').textContent = err.category;
+        document.getElementById('modal-confidence').textContent = err.confidence || 'medium';
+        document.getElementById('modal-explanation').textContent = err.explanation || err.description || '(нет)';
+        document.getElementById('modal-source').textContent = err.source || err.original || '';
+        document.getElementById('modal-current').textContent = err.current || '';
+        document.getElementById('modal-manual-input').value = (currentFixes[key] ? currentFixes[key].new_value : err.suggestion) || err.current || '';
+        document.getElementById('modal-ph-warning').style.display = 'none';
+        checkModalPlaceholder();
+        document.getElementById('modal-overlay').style.display = 'flex';
+    }
+
+    function extractPlaceholders(s) {
+        if (!s) return [];
+        const re = /\{[^}]+\}|%[sd]|<ph[^>]*>/g;
+        return (s.match(re) || []).sort();
+    }
+    function checkModalPlaceholder() {
+        if (!activeModalError) return;
+        const newVal = document.getElementById('modal-manual-input').value;
+        const origVal = activeModalError.source || activeModalError.original || '';
+        const origPh = extractPlaceholders(origVal);
+        const newPh = extractPlaceholders(newVal);
+        const warn = document.getElementById('modal-ph-warning');
+        const preview = document.getElementById('modal-preview');
+        const mismatch = JSON.stringify(origPh) !== JSON.stringify(newPh);
+        if (warn) warn.style.display = mismatch ? 'block' : 'none';
+        if (preview) {
+            preview.innerHTML = 'Original: ' + escapeHtml(origVal) + '<br>New: ' + escapeHtml(newVal);
+        }
+    }
+
+    function showToast(msg, type) {
+        let t = document.getElementById('toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'toast';
+            t.className = 'toast';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.className = 'toast show' + (type ? ' ' + type : '');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => { t.className = 'toast'; }, 3000);
+    }
+
+    function closeModal() {
+        document.getElementById('modal-overlay').style.display = 'none';
+        activeModalError = null;
+    }
+
+    function saveManualFixFromModal() {
+        if (!activeModalError) return;
+        const newVal = document.getElementById('modal-manual-input').value;
+        decideFix(activeModalError.key, 'manual', newVal);
+        closeModal();
+    }
+
+    // Glossary
+    async function loadGlossary() {
+        try {
+            const resp = await fetch('/glossary');
+            const data = await resp.json();
+            const tbody = document.getElementById('glossary-tbody');
+            tbody.innerHTML = '';
+            for (const [ru, item] of Object.entries(data)) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${escapeHtml(ru)}</td>
+                    <td>${escapeHtml(item.kk || '')}</td>
+                    <td>${escapeHtml((item.variants || []).join(', '))}</td>
+                    <td><button class="btn btn-sm btn-danger" onclick="deleteGlossaryTerm('${escapeHtmlJs(ru)}')">Удалить</button></td>
+                `;
+                tbody.appendChild(tr);
+            }
+        } catch (e) {}
+    }
+
+    async function addGlossaryTerm() {
+        const ru = document.getElementById('new-ru-term').value.trim();
+        const kk = document.getElementById('new-kk-term').value.trim();
+        const vars = document.getElementById('new-variants').value.split(',').map(s => s.trim()).filter(Boolean);
+        if (!ru || !kk) { alert('Заполните русский термин и казахский перевод'); return; }
+
+        await fetch('/glossary', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ru_term: ru, kk: kk, variants: vars })
+        });
+        document.getElementById('new-ru-term').value = '';
+        document.getElementById('new-kk-term').value = '';
+        document.getElementById('new-variants').value = '';
+        loadGlossary();
+    }
+
+    async function deleteGlossaryTerm(ru) {
+        if (!confirm(`Удалить термин "${ru}"?`)) return;
+        await fetch(`/glossary/${encodeURIComponent(ru)}`, { method: 'DELETE' });
+        loadGlossary();
+    }
+
+    // Export
+    function exportReport(format) {
+        if (!currentAnalysisId) { alert('Сначала выполните анализ файлов'); return; }
+        if (format === 'markdown') {
+            window.open(`/analysis/${currentAnalysisId}/export/markdown`, '_blank');
+        } else if (format === 'csv') {
+            window.open(`/analysis/${currentAnalysisId}/export/csv`, '_blank');
+        } else if (format === 'json') {
+            window.open(`/analysis/${currentAnalysisId}/export/json`, '_blank');
+        } else if (format === 'excel') {
+            window.open(`/analysis/${currentAnalysisId}/export/excel`, '_blank');
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeHtmlJs(str) {
+        const escaped = String(str ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+            .replace(/\r/g, '\\r').replace(/\n/g, '\\n')
+            .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+        return escapeHtml(escaped);
+    }
+
+    // ---- AI Providers ----
+    async function aiLoadProviders() {
+        try {
+            const resp = await fetch('/ai/providers');
+            const data = await resp.json();
+            const list = document.getElementById('ai-providers-list');
+            list.innerHTML = '';
+            const sel = document.getElementById('ai-review-provider');
+            if (sel) sel.innerHTML = '';
+            data.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'detail-row';
+                div.innerHTML = `<strong>${escapeHtml(p.name)}</strong> (${escapeHtml(p.type)}) model=${escapeHtml(p.model)} key=${p.has_api_key?'yes':'no'} status=${p.enabled?'enabled':'disabled'}
+                    <button class="btn btn-sm btn-secondary" onclick="aiTestProvider('${escapeHtmlJs(p.id)}')">Test</button>
+                    <button class="btn btn-sm btn-danger" onclick="aiDeleteProvider('${escapeHtmlJs(p.id)}')">Delete</button>`;
+                list.appendChild(div);
+                if (sel) {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.name + ' (' + p.model + ')';
+                    sel.appendChild(opt);
+                }
+            });
+        } catch (e) {}
+    }
+
+    async function aiSaveProvider() {
+        const payload = {
+            type: document.getElementById('ai-type').value,
+            name: document.getElementById('ai-name').value || document.getElementById('ai-type').value,
+            base_url: document.getElementById('ai-baseurl').value,
+            model: document.getElementById('ai-model').value,
+            api_key: document.getElementById('ai-key').value,
+        };
+        try {
+            const resp = await fetch('/ai/providers', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            if (!resp.ok) throw new Error(await resp.text());
+            document.getElementById('ai-key').value = '';
+            aiLoadProviders();
+            showToast('Provider saved', 'success');
+        } catch (e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function aiTestProvider(id) {
+        try {
+            const resp = await fetch('/ai/providers/' + id + '/test', { method:'POST' });
+            const data = await resp.json();
+            showToast((data.ok?'OK: ':'FAIL: ') + (data.message||''), data.ok?'success':'error');
+        } catch (e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function aiDeleteProvider(id) {
+        if (!confirm('Delete provider?')) return;
+        await fetch('/ai/providers/' + id, { method:'DELETE' });
+        aiLoadProviders();
+    }
+
+    let currentAiJob = null;
+    async function aiStartReview() {
+        if (!currentAnalysisId) { showToast('Run an analysis first', 'error'); return; }
+        const providerId = document.getElementById('ai-review-provider').value;
+        const maxItems = parseInt(document.getElementById('ai-max-items').value || '20', 10);
+        const budgetRaw = document.getElementById('ai-max-tokens').value;
+        const payload = { provider_id: providerId, max_items: maxItems };
+        if (budgetRaw) payload.max_tokens_budget = parseInt(budgetRaw, 10);
+        try {
+            const resp = await fetch('/analysis/' + currentAnalysisId + '/ai/review', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            if (!resp.ok) throw new Error(await resp.text());
+            const data = await resp.json();
+            currentAiJob = data.job_id;
+            showToast('AI review started', 'success');
+            aiPollReview();
+        } catch (e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function aiPollReview() {
+        if (!currentAiJob) return;
+        try {
+            const resp = await fetch('/ai/review/' + currentAiJob);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+            const data = await resp.json();
+            const errors = Array.isArray(data.errors) ? data.errors : [];
+            document.getElementById('ai-review-status').textContent =
+                data.status + ' ' + data.processed + '/' + data.total
+                + (errors.length ? ` (ошибок: ${errors.length})` : '');
+            const errorBox = document.getElementById('ai-review-errors');
+            errorBox.replaceChildren();
+            errorBox.style.display = errors.length ? 'block' : 'none';
+            if (errors.length) {
+                const heading = document.createElement('strong');
+                heading.textContent = `AI Review сообщил об ошибках (${errors.length}):`;
+                errorBox.appendChild(heading);
+                const list = document.createElement('ul');
+                const uniqueErrors = [...new Set(errors.map(error => String(error)))];
+                uniqueErrors.slice(0, 5).forEach(error => {
+                    const item = document.createElement('li');
+                    item.textContent = error;
+                    list.appendChild(item);
+                });
+                if (uniqueErrors.length > 5) {
+                    const item = document.createElement('li');
+                    item.textContent = `И ещё ${uniqueErrors.length - 5} типов ошибок.`;
+                    list.appendChild(item);
+                }
+                errorBox.appendChild(list);
+            }
+            const tbody = document.getElementById('ai-findings-tbody');
+            tbody.innerHTML = '';
+            const findings = Array.isArray(data.findings) ? data.findings : [];
+            findings.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${escapeHtml(f.key)}</td><td>${escapeHtml(f.category)}</td><td>${escapeHtml(f.confidence)}</td><td>${escapeHtml(f.suggested_translation)}</td>
+                <td><button class="btn btn-sm btn-success" onclick="aiDecide('${escapeHtmlJs(f.key)}','accept')">Accept</button>
+                <button class="btn btn-sm btn-danger" onclick="aiDecide('${escapeHtmlJs(f.key)}','reject')">Reject</button></td>`;
+                tbody.appendChild(tr);
+            });
+            if (!findings.length) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 5;
+                cell.textContent = data.status === 'done' && !errors.length
+                    ? 'Проверка завершена: AI не сообщил о проблемах.'
+                    : 'AI-предложений нет. Подробности смотрите в сообщениях об ошибках выше.';
+                row.appendChild(cell);
+                tbody.appendChild(row);
+            }
+            if (data.status === 'running') {
+                setTimeout(aiPollReview, 1500);
+            } else {
+                const failed = data.status === 'error' || errors.length > 0;
+                const message = data.status === 'done' && !findings.length && !failed
+                    ? 'AI review completed; no issues reported'
+                    : `AI review ${data.status}${errors.length ? ` (${errors.length} errors)` : ''}`;
+                showToast(message, failed ? 'error' : 'success');
+                aiLoadUsage();
+            }
+        } catch (e) {
+            document.getElementById('ai-review-status').textContent =
+                'Не удалось получить статус AI Review: ' + e.message;
+        }
+    }
+
+    async function aiStopReview() {
+        if (!currentAiJob) return;
+        await fetch('/ai/review/' + currentAiJob + '/stop', { method:'POST' });
+        showToast('Stop requested', 'success');
+    }
+
+    async function aiDecide(key, action) {
+        if (!currentAnalysisId) return;
+        await fetch('/analysis/' + currentAnalysisId + '/ai/findings/decision', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key:key, action:action }) });
+        aiPollReview();
+    }
+
+    async function aiLoadUsage() {
+        try {
+            const resp = await fetch('/ai/usage');
+            const data = await resp.json();
+            document.getElementById('ai-usage').innerHTML = `Jobs: ${data.jobs}, tokens: ${data.total_tokens}, estimated cost: $${data.estimated_cost.toFixed(4)}`;
+        } catch (e) {}
+    }
+
+    // hook tab switching to load data
+    const _origSwitchTab = switchTab;
+
+</script>
+</body>
+</html>
